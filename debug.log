@@ -1,0 +1,15 @@
+[0118/142405:ERROR:process_reader_win.cc(114)] NtOpenThread: {Accès refusé} Un processus a demandé l’accès a un objet, mais il ne bénéficie pas des autorisations nécessaires.  (0xc0000022)
+[0118/142405:ERROR:exception_snapshot_win.cc(87)] thread ID 2144 not found in process
+[0118/142405:WARNING:crash_report_exception_handler.cc(61)] ProcessSnapshotWin::Initialize failed
+[0208/072307:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0208/072307:ERROR:node_debugger.cc(86)] Cannot start debugger server
+[0208/210208:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0208/210208:ERROR:node_debugger.cc(86)] Cannot start debugger server
+[0208/211227:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0208/211227:ERROR:node_debugger.cc(86)] Cannot start debugger server
+[0208/221304:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0208/221304:ERROR:node_debugger.cc(86)] Cannot start debugger server
+[0216/170320:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0216/170320:ERROR:node_debugger.cc(86)] Cannot start debugger server
+[0216/222221:ERROR:tcp_listen_socket.cc(76)] Could not bind socket to 127.0.0.1:6004
+[0216/222221:ERROR:node_debugger.cc(86)] Cannot start debugger server

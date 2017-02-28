@@ -1,0 +1,1 @@
+[{"endPosition":{"character":54,"line":3,"position":208},"failure":"Missing semicolon","fix":{"innerRuleName":"semicolon","innerReplacements":[{"innerStart":208,"innerLength":0,"innerText":";"}]},"name":"src/app/user.service.ts","ruleName":"semicolon","startPosition":{"character":54,"line":3,"position":208}}]

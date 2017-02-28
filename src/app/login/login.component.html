@@ -1,0 +1,14 @@
+<h1>Log in</h1>
+<div class="alert alert-danger" *ngIf="authenticationFailed">Nope, try again</div>
+<form (ngSubmit)="authenticate()" #loginForm="ngForm">
+  <div>
+    <label id=" login-label">Login</label>
+    <input type="text" id="login" class="form-control" name="login" [(ngModel)]="credentials.login" required>
+  </div>
+  <div>
+    <label id="password-label">Password</label>
+    <input type="password" id="password" class="form-control" name="password" [(ngModel)]="credentials.password" required>
+  </div>
+  <br>
+  <button class="btn btn-primary" type="submit" [disabled]="!loginForm.valid">Register</button>
+</form>

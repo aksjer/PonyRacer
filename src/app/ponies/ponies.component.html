@@ -1,0 +1,10 @@
+<button (click)="refreshList()">Refresh</button>
+
+<div *ngFor="let pony of ponies; let isEven=even">
+  <div [style.color]="isEven ? 'green' : 'black'">{{pony | json}}</div>
+</div>
+
+<div>{{0.5 | percent}}</div>
+<div>{{0.5 | currency:'EUR':true}}</div>
+
+<div>{{asyncGreeting | async}}</div>
