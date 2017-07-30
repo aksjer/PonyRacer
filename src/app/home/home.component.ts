@@ -1,4 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs/Subscription';
+
+import { UserModel } from '../models/user.model';
 import { UserService } from '../user.service';
 
 @Component({
@@ -8,9 +11,11 @@ import { UserService } from '../user.service';
 })
 export class HomeComponent implements OnInit, OnDestroy {
 
-  userEventsSubscription;
-  user;
-  constructor(private userService: UserService) { }
+  user: UserModel;
+  userEventsSubscription: Subscription;
+
+  constructor(private userService: UserService) {
+  }
 
   ngOnInit() {
     this.userEventsSubscription = this.userService.userEvents.subscribe(user => this.user = user);
@@ -21,5 +26,4 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.userEventsSubscription.unsubscribe();
     }
   }
-
 }

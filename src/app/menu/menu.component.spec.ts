@@ -1,4 +1,4 @@
-import { async, TestBed } from '@angular/core/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { RouterLinkWithHref } from '@angular/router';
 import { By } from '@angular/platform-browser';
@@ -13,7 +13,8 @@ describe('MenuComponent', () => {
 
   const fakeUserService = {
     userEvents: new Subject<UserModel>(),
-    logout: () => {}
+    logout: () => {},
+    scoreUpdates: (userId: number) => {}
   } as UserService;
   const fakeRouter = jasmine.createSpyObj('Router', ['navigate']);
 
@@ -75,20 +76,54 @@ describe('MenuComponent', () => {
     fixture.detectChanges();
 
     const links = fixture.debugElement.queryAll(By.directive(RouterLinkWithHref));
-    expect(links.length).toBe(2, 'You should have two routerLink: one to the races, one to the home');
+    expect(links.length).toBe(1, 'You should have only one routerLink to the home when the user is not logged');
+
+    fixture.componentInstance.user = { login: 'cedric', money: 200 } as UserModel;
+    fixture.detectChanges();
+
+    const linksAfterLogin = fixture.debugElement.queryAll(By.directive(RouterLinkWithHref));
+    expect(linksAfterLogin.length).toBe(2, 'You should have two routerLink: one to the races, one to the home when the user is logged');
   });
 
-  it('should listen to userEvents in ngOnInit', async(() => {
+  it('should listen to userEvents and score updates in ngOnInit', fakeAsync(() => {
     const component = new MenuComponent(fakeUserService, fakeRouter);
     component.ngOnInit();
 
-    const user = { login: 'cedric', money: 200 } as UserModel;
-
-    fakeUserService.userEvents.subscribe(() => {
-      expect(component.user).toBe(user, 'Your component should listen to the `userEvents` observable');
-    });
-
+    // emulate a login
+    const fakeScoreUpdates = new Subject<UserModel>();
+    spyOn(fakeUserService, 'scoreUpdates').and.returnValue(fakeScoreUpdates);
+    const user = { id: 1, login: 'cedric', money: 200 } as UserModel;
     fakeUserService.userEvents.next(user);
+    tick();
+
+    expect(component.user).toBe(user, 'Your component should listen to the `userEvents` observable on login');
+    expect(fakeUserService.scoreUpdates).toHaveBeenCalledWith(user.id);
+    tick();
+
+    // emulate a score update
+    user.money = 300;
+    fakeScoreUpdates.next(user);
+    tick();
+
+    expect(component.user.money).toBe(300, 'Your component should listen to the `scoreUpdates` observable');
+
+    // emulate an error
+    fakeScoreUpdates.error('You should catch potential errors on score updates with a `.catch()`');
+    tick();
+    expect(component.user.money).toBe(300, 'Your component should catch error on score updates');
+
+    // emulate a score update
+    user.money = 400;
+    fakeScoreUpdates.next(user);
+    tick();
+
+    expect(component.user.money).toBe(400, 'Your component should catch error on score updates');
+
+    // emulate a logout
+    fakeUserService.userEvents.next(null);
+    tick();
+
+    expect(component.user).toBe(null, 'Your component should listen to the `userEvents` observable on logout');
   }));
 
   it('should display the user if logged', () => {
@@ -101,11 +136,11 @@ describe('MenuComponent', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement;
-    const info = element.querySelector('a.nav-item.nav-link.float-md-right');
+    const info = element.querySelector('span.nav-item.navbar-text.mr-2');
     expect(info)
-      .not.toBeNull('You should have an `a` element with the classes `nav-item nav-link float-md-right` to display the user info');
-    expect(info.textContent).toContain('cedric', 'You should display the user\'s name in a `a` element');
-    expect(info.textContent).toContain('200', 'You should display the user\'s score in a `a` element');
+      .not.toBeNull('You should have a `span` element with the classes `nav-item navbar-text mr-2` to display the user info');
+    expect(info.textContent).toContain('cedric', 'You should display the user\'s name in a `span` element');
+    expect(info.textContent).toContain('200', 'You should display the user\'s score in a `span` element');
   });
 
   it('should unsubscribe on destroy', () => {

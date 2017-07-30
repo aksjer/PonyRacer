@@ -1,10 +1,12 @@
 import { async, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
 import { Subject } from 'rxjs/Subject';
 
-import { AppModule } from '../app.module';
+import { UsersModule } from '../users/users.module';
 import { LoginComponent } from './login.component';
 import { UserService } from '../user.service';
+import { AlertComponent } from '../shared/alert/alert.component';
 
 describe('LoginComponent', () => {
 
@@ -12,7 +14,7 @@ describe('LoginComponent', () => {
   const fakeUserService = jasmine.createSpyObj('UserService', ['authenticate']);
 
   beforeEach(() => TestBed.configureTestingModule({
-    imports: [AppModule],
+    imports: [UsersModule],
     providers: [
       { provide: UserService, useValue: fakeUserService },
       { provide: Router, useValue: fakeRouter }
@@ -99,7 +101,7 @@ describe('LoginComponent', () => {
 
     fixture.detectChanges();
 
-    const subject = new Subject<String>();
+    const subject = new Subject<string>();
     fakeUserService.authenticate.and.returnValue(subject);
 
     const componentInstance = fixture.componentInstance;
@@ -127,7 +129,7 @@ describe('LoginComponent', () => {
 
     fixture.detectChanges();
 
-    const subject = new Subject<String>();
+    const subject = new Subject<string>();
     fakeUserService.authenticate.and.returnValue(subject);
 
     const componentInstance = fixture.componentInstance;
@@ -156,8 +158,16 @@ describe('LoginComponent', () => {
 
     fixture.detectChanges();
 
-    const element = fixture.nativeElement;
-    expect(element.querySelector('.alert')).not.toBeNull('You should have a div with a class `alert` to display an error message');
-    expect(element.querySelector('.alert').textContent).toContain('Nope, try again');
+    const element = fixture.debugElement;
+    const alert = element.query(By.directive(AlertComponent));
+    expect(alert)
+      .not.toBeNull('You should have an AlertComponent to display an error message');
+    expect(alert.nativeElement.textContent).toContain('Nope, try again');
+    expect(alert.componentInstance.type).toBe('danger', 'The alert should be a danger one');
+
+    // close the alert
+    alert.componentInstance.closeHandler();
+    fixture.detectChanges();
+    expect(element.query(By.directive(AlertComponent))).toBeNull('The alert should disappear when closed');
   });
 });

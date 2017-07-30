@@ -1,0 +1,4 @@
+<div [class]="alertClasses">
+  <button type="button" class="close" aria-label="Close" *ngIf="dismissible" (click)="closeHandler()"><span aria-hidden="true">&#215;</span></button>
+  <ng-content></ng-content>
+</div>

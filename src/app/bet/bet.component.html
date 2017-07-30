@@ -1,15 +1,10 @@
-<div *ngIf="raceModel">
-  <h2>{{raceModel.name}}</h2>
-  <p>{{raceModel.startInstant | fromNow}}</p>
-  <div *ngIf="betFailed" class="alert alert-danger">
-    <button type="button" class="close" aria-label="Close" (click)="betFailed = false;">
-      <span aria-hidden="true">&#215;</span>
-      </button> The race is already started or finished
+<h2>{{ raceModel.name }}</h2>
+<p>{{ raceModel.startInstant | fromNow }}</p>
+<a class="btn btn-primary" [routerLink]="['/races', raceModel.id, 'live']">Watch live!</a>
+<pr-alert *ngIf="betFailed" type="danger" (close)="betFailed = false"> The race is already started or finished</pr-alert>
+<div class="py-2">Click to bet on your favorite pony</div>
+<div class="row">
+  <div *ngFor="let pony of raceModel.ponies" class="col-12 col-md-2" [ngClass]="{selected: isPonySelected(pony)}">
+    <pr-pony [ponyModel]="pony" (ponyClicked)="betOnPony(pony)"></pr-pony>
   </div>
-  <div class="row">
-    <div *ngFor="let pony of raceModel.ponies" class="col-md-2" [class.selected]="isPonySelected(pony)">
-      <pr-pony [ponyModel]="pony" (ponyClicked)="betOnPony(pony)"></pr-pony>
-    </div>
-  </div>
-  <a [routerLink]="['/races', raceModel.id, 'live']">Watch live!</a>
 </div>

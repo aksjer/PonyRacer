@@ -1,51 +1,59 @@
 import { Injectable } from '@angular/core';
-import { Http, RequestOptions, Response } from '@angular/http';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Observable } from 'rxjs/Observable';
-import { BehaviorSubject } from 'rxjs/BehaviorSubject'
-import { UserModel } from './models/user.model';
+import 'rxjs/add/operator/do';
+
 import { environment } from '../environments/environment';
+import { UserModel } from './models/user.model';
+import { JwtInterceptorService } from './jwt-interceptor.service';
+import { WsService } from './ws.service';
 
 @Injectable()
 export class UserService {
 
-  userEvents: BehaviorSubject<UserModel> = new BehaviorSubject<UserModel>(undefined);
+  public userEvents = new BehaviorSubject<UserModel>(undefined);
 
-  constructor(private http: Http, private requestOptions: RequestOptions) {
+  constructor(private http: HttpClient, private jwtInterceptorService: JwtInterceptorService, private wsService: WsService) {
     this.retrieveUser();
   }
 
-  register(login, password, birthYear): Observable<any> {
-    return this.http
-      .post(`${environment.baseUrl}/api/users`, { login: login, password: password, birthYear: birthYear })
-      .map((res: Response) => res.json());
+  register(login, password, birthYear): Observable<UserModel> {
+    const body = { login, password, birthYear };
+    return this.http.post<UserModel>(`${environment.baseUrl}/api/users`, body);
   }
 
-  authenticate(credentials: { login: string, password: string }): Observable<any> {
-    return this.http
-      .post(`${environment.baseUrl}/api/users/authentication`, credentials)
-      .map(res => res.json())
+  authenticate(credentials): Observable<UserModel> {
+    return this.http.post<UserModel>(`${environment.baseUrl}/api/users/authentication`, credentials)
       .do(user => this.storeLoggedInUser(user));
   }
 
-  storeLoggedInUser(user: UserModel): void {
-    this.requestOptions.headers.set('Authorization', `Bearer ${user.token}`);
+  storeLoggedInUser(user) {
+    window.localStorage.setItem('rememberMe', JSON.stringify(user));
+    this.jwtInterceptorService.setJwtToken(user.token);
     this.userEvents.next(user);
-    localStorage.setItem('rememberMe', JSON.stringify(user));
   }
 
-  retrieveUser(): void {
-    const rememberMe = localStorage.getItem('rememberMe');
-    if (rememberMe) {
-      const user: UserModel = JSON.parse(rememberMe);
-      this.requestOptions.headers.set('Authorization', `Bearer ${user.token}`);
+  retrieveUser() {
+    const value = window.localStorage.getItem('rememberMe');
+    if (value) {
+      const user = JSON.parse(value);
+      this.jwtInterceptorService.setJwtToken(user.token);
       this.userEvents.next(user);
     }
   }
 
-  logout(): void {
-    this.requestOptions.headers.delete('Authorization');
+  logout() {
     this.userEvents.next(null);
-    localStorage.removeItem('rememberMe');
+    window.localStorage.removeItem('rememberMe');
+    this.jwtInterceptorService.removeJwtToken();
   }
 
+  scoreUpdates(userId: number): Observable<UserModel> {
+    return this.wsService.connect(`/player/${userId}`);
+  }
+
+  isLoggedIn(): boolean {
+    return !!window.localStorage.getItem('rememberMe');
+  }
 }

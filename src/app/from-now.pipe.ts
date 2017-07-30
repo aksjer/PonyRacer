@@ -6,7 +6,7 @@ import * as moment from 'moment';
 })
 export class FromNowPipe implements PipeTransform {
 
-  transform(value: any, args?: any): string {
+  transform(value: any, args?: any): any {
     return moment(value).fromNow();
   }
 

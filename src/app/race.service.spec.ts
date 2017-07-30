@@ -1,8 +1,6 @@
-import { async, TestBed } from '@angular/core/testing';
-import { Http, BaseRequestOptions, Response, ResponseOptions, RequestMethod } from '@angular/http';
-import { MockBackend, MockConnection } from '@angular/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { Subject } from 'rxjs/Subject';
-import 'rxjs/add/observable/of';
 
 import { environment } from '../environments/environment';
 import { RaceService } from './race.service';
@@ -13,18 +11,12 @@ import { PonyWithPositionModel } from './models/pony.model';
 describe('RaceService', () => {
 
   let raceService: RaceService;
-  let mockBackend: MockBackend;
+  let http: HttpTestingController;
   const wsService = jasmine.createSpyObj('WsService', ['connect']);
 
   beforeEach(() => TestBed.configureTestingModule({
+    imports: [HttpClientTestingModule],
     providers: [
-      MockBackend,
-      BaseRequestOptions,
-      {
-        provide: Http,
-        useFactory: (backend, defaultOptions) => new Http(backend, defaultOptions),
-        deps: [MockBackend, BaseRequestOptions]
-      },
       { provide: WsService, useValue: wsService },
       RaceService
     ]
@@ -32,80 +24,64 @@ describe('RaceService', () => {
 
   beforeEach(() => {
     raceService = TestBed.get(RaceService);
-    mockBackend = TestBed.get(MockBackend);
+    http = TestBed.get(HttpTestingController);
   });
 
-  it('should return an Observable of 3 races', async(() => {
+  it('should return an Observable of 3 races', () => {
     // fake response
     const hardcodedRaces = [{ name: 'Paris' }, { name: 'Tokyo' }, { name: 'Lyon' }];
-    const response = new Response(new ResponseOptions({ body: hardcodedRaces }));
-    // return the response if we have a connection to the MockBackend
-    mockBackend.connections.subscribe((connection: MockConnection) => {
-      expect(connection.request.url)
-        .toBe(`${environment.baseUrl}/api/races?status=PENDING`, 'The URL requested is not correct');
-      expect(connection.request.method).toBe(RequestMethod.Get);
-      connection.mockRespond(response);
-    });
 
-    raceService.list().subscribe((races: Array<RaceModel>) => {
-      expect(races.length).toBe(3, 'The `list` method should return an array of RaceModel wrapped in an Observable');
-    });
-  }));
+    let actualRaces = [];
+    raceService.list('PENDING').subscribe((races: Array<RaceModel>) => actualRaces = races);
 
-  it('should get a race', async(() => {
+    http.expectOne(`${environment.baseUrl}/api/races?status=PENDING`)
+      .flush(hardcodedRaces);
+
+    expect(actualRaces).toEqual(hardcodedRaces, 'The `list` method should return an array of RaceModel wrapped in an Observable');
+  });
+
+  it('should get a race', () => {
     // fake response
-    const race = { name: 'Paris' };
-    const response = new Response(new ResponseOptions({ body: race }));
-    // return the response if we have a connection to the MockBackend
-    mockBackend.connections.subscribe((connection: MockConnection) => {
-      expect(connection.request.url)
-        .toBe(`${environment.baseUrl}/api/races/1`, 'The URL requested is not correct');
-      expect(connection.request.method).toBe(RequestMethod.Get);
-      connection.mockRespond(response);
-    });
-
+    const race = { name: 'Paris' } as RaceModel;
     const raceId = 1;
 
-    raceService.get(raceId).subscribe(fetchedRace => expect(fetchedRace).toBe(race));
-  }));
+    let actualRace;
+    raceService.get(raceId).subscribe(fetchedRace => actualRace = fetchedRace);
 
-  it('should bet on a race', async(() => {
+    http.expectOne(`${environment.baseUrl}/api/races/${raceId}`)
+      .flush(race);
+
+    expect(actualRace).toBe(race, 'The observable must emit the race');
+  });
+
+  it('should bet on a race', () => {
     // fake response
-    const race = { name: 'Paris' };
-    const response = new Response(new ResponseOptions({ body: race }));
-    // return the response if we have a connection to the MockBackend
-    mockBackend.connections.subscribe((connection: MockConnection) => {
-      expect(connection.request.url)
-        .toBe(`${environment.baseUrl}/api/races/1/bets`, 'The URL requested is not correct');
-      expect(connection.request.method).toBe(RequestMethod.Post);
-      connection.mockRespond(response);
-    });
-
+    const race = { name: 'Paris' } as RaceModel;
     const raceId = 1;
     const ponyId = 2;
 
-    raceService.bet(raceId, ponyId).subscribe(fetchedRace => expect(fetchedRace).toBe(race));
-  }));
+    let actualRace;
+    raceService.bet(raceId, ponyId).subscribe(fetchedRace => actualRace = fetchedRace);
 
-  it('should cancel a bet on a race', async(() => {
-    // fake response
-    const response = new Response(new ResponseOptions({ body: null }));
-    // return the response if we have a connection to the MockBackend
-    mockBackend.connections.subscribe((connection: MockConnection) => {
-      expect(connection.request.url)
-        .toBe(`${environment.baseUrl}/api/races/1/bets`, 'The URL requested is not correct');
-      expect(connection.request.method).toBe(RequestMethod.Delete);
-      connection.mockRespond(response);
-    });
+    const req = http.expectOne({ method: 'POST', url: `${environment.baseUrl}/api/races/${raceId}/bets` });
+    expect(req.request.body).toEqual({ ponyId });
+    req.flush(race);
 
+    expect(actualRace).toBe(race, 'The observable must emit the race');
+  });
+
+  it('should cancel a bet on a race', () => {
     const raceId = 1;
 
     raceService.cancelBet(raceId).subscribe(() => {});
-  }));
 
-  it('should return live positions from websockets', async(() => {
+    http.expectOne({ method: 'DELETE', url: `${environment.baseUrl}/api/races/${raceId}/bets` })
+      .flush(null);
+  });
+
+  it('should return live positions from websockets', () => {
     const raceId = 1;
-    const messages = new Subject<{status: string; ponies: Array<PonyWithPositionModel>}>();
+    const messages = new Subject<{ status: string; ponies: Array<PonyWithPositionModel> }>();
     let positions: Array<PonyWithPositionModel> = [];
 
     wsService.connect.and.returnValue(messages);
@@ -126,6 +102,9 @@ describe('RaceService', () => {
       }]
     });
 
+    expect(positions.length).toBe(1);
+    expect(positions[0].position).toBe(1);
+
     messages.next({
       status: 'RUNNING',
       ponies: [{
@@ -138,6 +117,35 @@ describe('RaceService', () => {
 
     expect(positions.length).toBe(1);
     expect(positions[0].position).toBe(100);
-  }));
+
+    messages.next({
+      status: 'FINISHED',
+      ponies: [{
+        id: 1,
+        name: 'Superb Runner',
+        color: 'BLUE',
+        position: 101
+      }]
+    });
+
+    expect(positions.length).toBe(1);
+    expect(positions[0].position).toBe(100, 'The observable should stop emitting if the race status is FINISHED');
+  });
+
+  it('should boost a pony in a race', () => {
+    // fake response
+    const race = { name: 'Paris' } as RaceModel;
+    const ponyId = 12;
+    const raceId = 1;
+
+    let actualRace;
+    raceService.boost(raceId, ponyId).subscribe(fetchedRace => actualRace = fetchedRace);
+
+    const req = http.expectOne({ method: 'POST', url: `${environment.baseUrl}/api/races/${raceId}/boosts` });
+    expect(req.request.body).toEqual({ ponyId });
+    req.flush(race);
+
+    expect(actualRace).toBe(race, 'The observable must emit the race');
+  });
 
 });

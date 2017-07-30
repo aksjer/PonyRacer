@@ -1,4 +1,6 @@
-import { TestBed, async } from '@angular/core/testing';
+import { async, TestBed } from '@angular/core/testing';
+
+import { WEBSOCKET, WEBSTOMP } from './app.tokens';
 import { WsService } from './ws.service';
 
 describe('WsService', () => {
@@ -11,8 +13,8 @@ describe('WsService', () => {
     TestBed.configureTestingModule({
       providers: [
         WsService,
-        { provide: 'WebSocket', useValue: FakeWebSocket },
-        { provide: 'Webstomp', useValue: webstomp }
+        { provide: WEBSOCKET, useValue: FakeWebSocket },
+        { provide: WEBSTOMP, useValue: webstomp }
       ]
     });
   });

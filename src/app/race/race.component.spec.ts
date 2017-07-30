@@ -2,14 +2,14 @@ import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { By } from '@angular/platform-browser';
 
-import { AppModule } from '../app.module';
+import { RacesModule } from '../races/races.module';
 import { RaceComponent } from './race.component';
 import { PonyComponent } from '../pony/pony.component';
 
 describe('RaceComponent', () => {
 
   beforeEach(() => TestBed.configureTestingModule({
-    imports: [AppModule, RouterTestingModule]
+    imports: [RacesModule, RouterTestingModule]
   }));
 
   it('should display a race name and its ponies', () => {

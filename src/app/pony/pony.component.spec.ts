@@ -1,13 +1,13 @@
 import { async, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { AppModule } from '../app.module';
+import { RacesModule } from '../races/races.module';
 import { PonyComponent } from './pony.component';
 
 describe('PonyComponent', () => {
 
   beforeEach(() => TestBed.configureTestingModule({
-    imports: [AppModule, RouterTestingModule]
+    imports: [RacesModule, RouterTestingModule]
   }));
 
   it('should have method to get the image URL', () => {
@@ -62,6 +62,8 @@ describe('PonyComponent', () => {
     const element = fixture.nativeElement;
     const figure = element.querySelector('figure');
     expect(figure).not.toBeNull('You should have a `figure` element for the pony');
+    expect(window.getComputedStyle(figure).getPropertyValue('padding-top'))
+      .toBe('3px', 'You must apply some styles to the `figure` element');
     figure.dispatchEvent(new Event('click'));
     expect(ponyClickedCalled).toBeTruthy('You may have forgot the click handler on the `figure` element');
   }));
@@ -77,6 +79,20 @@ describe('PonyComponent', () => {
 
     // then we should have a nice URL
     expect(url).toBe('assets/images/pony-green-running.gif');
+  });
+
+  it('should have method to get the image URL for a boosted pony', () => {
+    // given a pony component with a GREEN running pony
+    const ponyComponent: PonyComponent = new PonyComponent();
+    ponyComponent.ponyModel = { id: 1, name: 'Fast Rainbow', color: 'GREEN' };
+    ponyComponent.isBoosted = true;
+    ponyComponent.isRunning = true;
+
+    // when we call the method for the URL
+    const url = ponyComponent.getPonyImageUrl();
+
+    // then we should have a nice URL
+    expect(url).toBe('assets/images/pony-green-rainbow.gif');
   });
 
 });

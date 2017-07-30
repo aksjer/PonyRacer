@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+
 import { UserService } from '../user.service';
-import { FormGroup } from '@angular/forms';
-import 'rxjs/Rx';
 
 @Component({
   selector: 'pr-login',
@@ -11,20 +10,25 @@ import 'rxjs/Rx';
 })
 export class LoginComponent implements OnInit {
 
-  credentials: { login: string, password: string };
-  authenticationFailed: boolean = false;
+  credentials = {
+    login: '',
+    password: ''
+  };
+  authenticationFailed = false;
 
-  constructor(private userService: UserService, private router: Router) { }
+  constructor(private router: Router, private userService: UserService) {
+  }
 
   ngOnInit() {
-    this.credentials = { login: '', password: '' };
   }
 
   authenticate() {
-    this.userService.authenticate(this.credentials).subscribe(res => {
-      this.authenticationFailed = false;
-      this.router.navigate(['/']);
-    }, err => this.authenticationFailed = true);
+    this.authenticationFailed = false;
+    this.userService.authenticate(this.credentials)
+      .subscribe(
+        () => this.router.navigate(['/']),
+        () => this.authenticationFailed = true
+      );
   }
 
 }

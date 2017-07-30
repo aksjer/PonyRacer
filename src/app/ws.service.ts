@@ -1,12 +1,13 @@
-import { Injectable, Inject } from '@angular/core';
+import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 
 import { environment } from '../environments/environment';
+import { WEBSOCKET, WEBSTOMP } from './app.tokens';
 
 @Injectable()
 export class WsService {
 
-  constructor(@Inject('WebSocket') private WebSocket, @Inject('Webstomp') private Webstomp) { }
+  constructor(@Inject(WEBSOCKET) private WebSocket, @Inject(WEBSTOMP) private Webstomp) { }
 
   connect(channel): Observable<any> {
     return Observable.create(observer => {

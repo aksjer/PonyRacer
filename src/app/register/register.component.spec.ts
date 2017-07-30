@@ -5,10 +5,12 @@ import { FormControl, FormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/throw';
+import 'rxjs/add/observable/of';
 
-import { AppModule } from '../app.module';
+import { UsersModule } from '../users/users.module';
 import { RegisterComponent } from './register.component';
 import { UserService } from '../user.service';
+import { AlertComponent } from '../shared/alert/alert.component';
 
 describe('RegisterComponent', () => {
 
@@ -16,7 +18,7 @@ describe('RegisterComponent', () => {
   const fakeRouter = jasmine.createSpyObj('Router', ['navigate']);
 
   beforeEach(() => TestBed.configureTestingModule({
-    imports: [AppModule, RouterTestingModule],
+    imports: [UsersModule, RouterTestingModule],
     providers: [
       { provide: UserService, useValue: fakeUserService },
       { provide: Router, useValue: fakeRouter }
@@ -36,7 +38,7 @@ describe('RegisterComponent', () => {
     fixture.debugElement.query(By.css('form')).triggerEventHandler('ngSubmit', {});
 
     expect(fixture.componentInstance.register).toHaveBeenCalled();
-    expect((<jasmine.Spy>fixture.componentInstance.register).calls.count())
+    expect((fixture.componentInstance.register as jasmine.Spy).calls.count())
       .toEqual(1, 'Looks like you are calling register several times!');
   });
 
@@ -66,6 +68,8 @@ describe('RegisterComponent', () => {
 
     // when adding values in the form
     const nativeElement = fixture.nativeElement;
+    const button = nativeElement.querySelector('button');
+    expect(button.getAttribute('disabled')).not.toBeNull('Your submit button should be disabled if the form is invalid');
     const login = nativeElement.querySelector('input');
     expect(login).not.toBeNull('Your template should have an input for the login');
     login.value = 'Cédric';
@@ -87,9 +91,10 @@ describe('RegisterComponent', () => {
 
     // then we should have a valid form, with no error
     expect(userForm.valid).toBe(true);
+    expect(button.getAttribute('disabled')).toBeNull('Your submit button should not be disabled if the form is invalid');
     expect(userForm.value).toEqual({
       login: 'Cédric',
-      passwordForm: {password: 'password', confirmPassword: 'password'},
+      passwordForm: { password: 'password', confirmPassword: 'password' },
       birthYear: 1986
     });
     expect(userForm.get('login').getError('required')).toBe(null);
@@ -282,10 +287,11 @@ describe('RegisterComponent', () => {
     expect(fakeRouter.navigate).not.toHaveBeenCalled();
     expect(component.registrationFailed).toBe(true, 'You should set a field `registrationFailed` to `true` if the registration fails');
     // and display the error message
-    const errorMessage = fixture.nativeElement.querySelector('#registration-error');
+    const errorMessage = fixture.debugElement.query(By.directive(AlertComponent));
     expect(errorMessage)
-      .not.toBeNull('You should display an error message in a div with id `registration-error` if the registration fails');
-    expect(errorMessage.textContent).toContain('Try again with another login...');
+      .not.toBeNull('You should display an error message in an AlertComponent if the registration fails');
+    expect(errorMessage.nativeElement.textContent).toContain('Try again with another login.');
+    expect(errorMessage.componentInstance.type).toBe('danger', 'The alert should be a danger one');
   });
 
 });

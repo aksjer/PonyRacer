@@ -6,21 +6,21 @@ import { Observable } from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/throw';
 
-import { AppModule } from '../app.module';
+import { RacesModule } from '../races/races.module';
 import { RaceService } from '../race.service';
 import { BetComponent } from './bet.component';
 import { PonyComponent } from '../pony/pony.component';
 import { RaceModel } from '../models/race.model';
 import { PonyModel } from '../models/pony.model';
+import { AlertComponent } from '../shared/alert/alert.component';
 
 describe('BetComponent', () => {
-  const fakeRaceService = jasmine.createSpyObj('RaceService', ['get', 'bet', 'cancelBet']);
-  const race = { id: 1, name: 'Paris' };
-  fakeRaceService.get.and.returnValue(Observable.of(race));
-  const fakeActivatedRoute = { snapshot: { params: { raceId: 1 } } };
+  const fakeRaceService = jasmine.createSpyObj('RaceService', ['bet', 'cancelBet']);
+  const race = { id: 1, name: 'Paris' } as RaceModel;
+  const fakeActivatedRoute = { snapshot: { data: { race } } };
 
   beforeEach(() => TestBed.configureTestingModule({
-    imports: [AppModule, RouterTestingModule],
+    imports: [RacesModule, RouterTestingModule],
     providers: [
       { provide: RaceService, useValue: fakeRaceService },
       { provide: ActivatedRoute, useValue: fakeActivatedRoute }
@@ -97,6 +97,7 @@ describe('BetComponent', () => {
     // then we should have placed a bet on the pony
     gentlePie.ponyClicked.subscribe(() => {
       expect(fakeRaceService.bet).toHaveBeenCalledWith(12, 1);
+      expect(betComponent.raceModel.betPonyId).toBe(1, 'You must store the response of the bet in the field `raceModel`');
     });
 
     gentlePie.ponyClicked.emit(betComponent.raceModel.ponies[0]);
@@ -115,11 +116,11 @@ describe('BetComponent', () => {
       startInstant: '2016-02-18T08:02:00Z',
       betPonyId: 1
     };
-    const pony = { id: 1 };
+    const pony = { id: 1 } as PonyModel;
 
     const isSelected = component.isPonySelected(pony);
 
-    expect(isSelected).toBe(true, 'The `isPonySelected` medthod should return true if the pony is selected');
+    expect(isSelected).toBe(true, 'The `isPonySelected` method should return true if the pony is selected');
   });
 
   it('should initialize the race with ngOnInit', () => {
@@ -127,11 +128,9 @@ describe('BetComponent', () => {
     const component = fixture.componentInstance;
     expect(component.raceModel).toBeUndefined();
 
-    fakeActivatedRoute.snapshot.params = { raceId: 1 };
     component.ngOnInit();
 
-    expect(component.raceModel).toBe(race, '`ngOnInit` should initialize the `raceModel`');
-    expect(fakeRaceService.get).toHaveBeenCalledWith(1);
+    expect(component.raceModel).toEqual(race, '`ngOnInit` should initialize the `raceModel`');
   });
 
   it('should display an error message if bet failed', () => {
@@ -142,16 +141,23 @@ describe('BetComponent', () => {
     component.raceModel = { id: 2 } as RaceModel;
     expect(component.betFailed).toBe(false);
 
-    const pony = { id: 1 };
+    const pony = { id: 1 } as PonyModel;
     component.betOnPony(pony);
 
     expect(component.betFailed).toBe(true);
 
     fixture.detectChanges();
 
-    const element = fixture.nativeElement;
-    const message = element.querySelector('.alert.alert-danger');
-    expect(message.textContent).toContain('The race is already started or finished');
+    const debugElement = fixture.debugElement;
+    const message = debugElement.query(By.directive(AlertComponent));
+    expect(message).not.toBeNull('You should have an AlertComponent if the bet failed');
+    expect(message.nativeElement.textContent).toContain('The race is already started or finished');
+    expect(message.componentInstance.type).toBe('danger', 'The alert should be a danger one');
+
+    // close the alert
+    message.componentInstance.closeHandler();
+    fixture.detectChanges();
+    expect(debugElement.query(By.directive(AlertComponent))).toBeNull('The AlertComponent should be closable');
   });
 
   it('should cancel a bet', () => {
@@ -165,7 +171,7 @@ describe('BetComponent', () => {
     component.betOnPony(pony);
 
     expect(fakeRaceService.cancelBet).toHaveBeenCalledWith(2);
-    expect(component.raceModel.betPonyId).toBeNull();
+    expect(component.raceModel.betPonyId).toBeFalsy();
   });
 
   it('should display a message if canceling a bet fails', () => {

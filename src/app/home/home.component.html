@@ -1,19 +1,13 @@
-<div class="text-xs-center" style="margin-top: 100px">
-<h1>Ponyracer <small>Always a pleasure to bet on ponies</small></h1>
+<div class="text-center" style="margin-top: 100px">
+  <h1>Ponyracer <small>Always a pleasure to bet on ponies</small></h1>
 </div>
 
-<div *ngIf="user">
-  <div class="text-xs-center">
-    <a class="btn btn-primary" routerLink="/races">Races</a>
-  </div>
+<div class="text-center" *ngIf="!user; else loggedIn">
+  <a class="btn btn-large btn-primary" routerLink="/users/login">Login</a>
+  <a class="btn btn-large btn-primary" routerLink="/users/register">Register</a>
 </div>
-
-<div *ngIf="!user">
-  <div class="text-xs-center">
-    <a class="btn btn-primary" routerLink="/login">Login</a>
+<ng-template #loggedIn>
+  <div class="text-center">
+    <a class="btn btn-large btn-primary" routerLink="/races">Races</a>
   </div>
-
-  <div class="text-xs-center">
-    <a class="btn btn-primary" routerLink="/register">Register</a>
-  </div>
-</div>
+</ng-template>

@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { UserService } from '../user.service';
-import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 
 @Component({
   selector: 'pr-register',
@@ -10,42 +11,42 @@ import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms'
 })
 export class RegisterComponent implements OnInit {
 
-  registrationFailed: boolean = false;
-
-  userForm: FormGroup;
-  passwordForm: FormGroup;
-
+  registrationFailed: boolean;
   loginCtrl: FormControl;
   passwordCtrl: FormControl;
   confirmPasswordCtrl: FormControl;
   birthYearCtrl: FormControl;
+  userForm: FormGroup;
+  passwordForm: FormGroup;
 
-  static passwordMatch(group: FormGroup) {
-    return group.get('password').value === group.get('confirmPassword').value ? null : { matchingError: true };
+  static passwordMatch(control: FormGroup) {
+    const password = control.get('password').value;
+    const confirmPassword = control.get('confirmPassword').value;
+    return password !== confirmPassword ? { matchingError: true } : null;
   }
 
   static validYear(control: FormControl) {
-    return control.value > 1900 && control.value < new Date().getFullYear() ? null : { invalidYear: true };
+    const birthYear = control.value;
+    return Number.isNaN(birthYear) ||
+    birthYear < 1900 ||
+    birthYear > new Date().getFullYear() ? { invalidYear: true } : null;
   }
 
-  constructor(private formBuilder: FormBuilder, private userService: UserService, private router: Router) { }
+  constructor(private fb: FormBuilder, private userService: UserService, private router: Router) {
+  }
 
   ngOnInit() {
-
-    this.loginCtrl = this.formBuilder.control('', Validators.compose([Validators.required, Validators.minLength(3)]));
-    this.passwordCtrl = this.formBuilder.control('', Validators.required);
-    this.confirmPasswordCtrl = this.formBuilder.control('', Validators.required);
-    this.birthYearCtrl = this.formBuilder.control('', Validators.compose([Validators.required, RegisterComponent.validYear]));
-
-    this.passwordForm = this.formBuilder.group({
+    this.loginCtrl = this.fb.control('', [Validators.required, Validators.minLength(3)]);
+    this.passwordCtrl = this.fb.control('', Validators.required);
+    this.confirmPasswordCtrl = this.fb.control('', Validators.required);
+    this.passwordForm = this.fb.group({
       password: this.passwordCtrl,
       confirmPassword: this.confirmPasswordCtrl
-    },
-      {
-        validator: RegisterComponent.passwordMatch
-      });
-
-    this.userForm = this.formBuilder.group({
+    }, {
+      validator: RegisterComponent.passwordMatch
+    });
+    this.birthYearCtrl = this.fb.control('', [Validators.required, RegisterComponent.validYear]);
+    this.userForm = this.fb.group({
       login: this.loginCtrl,
       passwordForm: this.passwordForm,
       birthYear: this.birthYearCtrl
@@ -53,13 +54,14 @@ export class RegisterComponent implements OnInit {
   }
 
   register() {
-    this.userService.register(this.userForm.get('login').value,
-      this.passwordForm.get('password').value,
-      this.userForm.get('birthYear').value)
-      .subscribe(() => {
-        this.registrationFailed = false;
-        this.router.navigate(['/']);
-      }, err => this.registrationFailed = true);
+    this.userService.register(
+      this.userForm.value.login,
+      this.userForm.value.passwordForm.password,
+      this.userForm.value.birthYear
+    ).subscribe(
+      () => this.router.navigate(['/']),
+      () => this.registrationFailed = true
+    );
   }
 
 }

@@ -1,6 +1,6 @@
 import { PonyracerPage } from './app.po';
 
-describe('ponyracer App', function() {
+describe('ponyracer App', () => {
   let page: PonyracerPage;
 
   beforeEach(() => {
